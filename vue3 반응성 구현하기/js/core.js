@@ -16,6 +16,9 @@ function trigger(target, key) {
     subscribe(target, key).forEach((effect) => effect());
 }
 
+export function deepRef() {}
+export function deepReactive() {}
+
 export function ref(value) {
     const refObject = {
         get value() {
@@ -62,18 +65,20 @@ function computedFunction(update) {
         종속성의 변화로만 값이 변한다.
     */
     let value;
-    // 종속성 값 변경 시 실행된다.
-    activeEffect = () => {
-        value = update();
-    };
-    activeEffect(); // computed 종속성의 구독하기
-    activeEffect = null;
     const computedRef = {
         get value() {
             track(computedRef, "value"); // 호출했을 땐 이펙트 추가
             return value;
         },
     };
+    // 종속성 값 변경 시 실행된다.
+    activeEffect = () => {
+        value = update();
+        trigger(computedRef, "value");
+    };
+    activeEffect(); // computed 종속성의 구독하기
+    activeEffect = null;
+
     return computedRef;
 }
 function computedObject(object) {
@@ -107,7 +112,6 @@ export function watchEffect(update) {
     effect();
 }
 export function watch(target, update) {
-    // reactive, reactiveKey
     const isRef = target.isRef;
     const isReactiveKey = typeof target === "function";
     if (isRef) {
