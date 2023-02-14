@@ -1,15 +1,24 @@
-import { reactive, watchEffect } from "./core.js";
+import { reactive, watchEffect, computed, watch } from "./core.js";
 
 const user = reactive({
     a0: 1,
     a1: 2,
+    count: 0,
 });
 
-watchEffect(function () {
-    console.log(user.a0 + user.a1);
+const userCount = computed({
+    get() {
+        return user.count;
+    },
+    set(newCount) {
+        user.count = newCount;
+    },
+});
+const userCountPlusOne = computed(() => userCount.value + 1);
+
+watchEffect(() => {
+    console.log(userCount.value);
+    console.log(userCountPlusOne.value);
 });
 
-// 3
-user.a0 = 5; // 7
-user.a1 = 10; // 15
-user.a1 = 6; // 16
+user.count = 2;
