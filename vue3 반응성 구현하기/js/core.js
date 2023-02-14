@@ -27,10 +27,12 @@ export function ref(value) {
             trigger(refObject, "value");
         },
     };
+    refObject.isRef = true;
     return refObject;
 }
 
 export function reactive(object) {
+    object.isReactive = true;
     const reactiveObject = new Proxy(object, {
         get(target, key) {
             track(target, key);
@@ -50,6 +52,7 @@ export function computed(update) {
     const computedRef = isTypeFunction
         ? computedFunction(update)
         : computedObject(update);
+    computedRef.isRef = true;
     return computedRef;
 }
 
@@ -103,4 +106,28 @@ export function watchEffect(update) {
     };
     effect();
 }
-export function watch(ref, update) {}
+export function watch(target, update) {
+    // reactive, reactiveKey
+    const isRef = target.isRef;
+    const isReactiveKey = typeof target === "function";
+    if (isRef) {
+        let from = target.value;
+        function watch() {
+            let to = target.value;
+            update(to, from);
+            from = to;
+        }
+        subscribe(target, "value").add(watch);
+    } else if (isReactiveKey) {
+        let from;
+        activeEffect = function () {
+            let to = target();
+            update(to, from);
+            from = to;
+        };
+        from = target();
+        activeEffect = null;
+    } else {
+        throw Error("안해요~");
+    }
+}
